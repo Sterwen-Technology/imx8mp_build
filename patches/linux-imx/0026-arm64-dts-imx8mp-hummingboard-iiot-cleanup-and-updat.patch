@@ -1,0 +1,547 @@
+From feea4798a71d9d0cc0db522c70dcff612c01309f Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 23 Jun 2025 19:01:18 +0300
+Subject: [PATCH] arm64: dts: imx8mp-hummingboard-iiot: cleanup and update
+ peripheral configurations
+
+- Removed unused preprocessor definitions for UART, CAN, and SPI muxing
+- Updated GPIO references and comments for USB and power regulators
+- Cleaned up and disabled legacy CAN regulator pins and controls
+- Replaced DSI panel configuration with updated backlight and panel node
+- Updated I2C2 clock frequency and pinctrl settings
+- Reworked DSI touchscreen node with correct compatible, interrupts, and wakeup support
+- Changed GPIO expander compatibility to "nxp,pcal6416" and updated pinctrl
+- Enabled new MIPI DSI panel with proper GPIO bindings and endpoint connections
+- Removed unused DSI reset logic and simplified GPIO hog definitions
+---
+ .../imx8mp-hummingboard-iiot-main.dts         |  13 +-
+ .../freescale/imx8mp-hummingboard-iiot.dtsi   | 198 ++++++------------
+ 2 files changed, 79 insertions(+), 132 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-main.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-main.dts
+index 783cc7101bee..a8df91609457 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-main.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-main.dts
+@@ -1,10 +1,21 @@
+ /dts-v1/;
+ 
++/* UARTA (UART3): Select RS232 or RS485 */
++#define UARTA_SEL_RS232_RS485 1 // {0:RS323,1:RS485}
++/* UARTB (UART4): Select RS232 or RS485 */
++#define UARTB_SEL_RS232_RS485 0 // {0:RS323,1:RS485}
++/* UARTA and UARTB: Select Internal or External */
++#define UARTA_UARTB_SEL_INT_EXT 0 // {0:INT,1:EXT}
++/* CANA and CANB: Select Internal or External */
++#define CANA_CANB_SEL_INT_EXT 0 // {0:INT,1:EXT}
++/* SPI MUX TPM/EXT {Select TPM or EXTERNAL_SPI_DEVICE} */
++#define SPI_SEL_TPM_EXT 0 // {0:TPM,1:EXT}
++
+ #include <dt-bindings/usb/pd.h>
+ #include "imx8mp-sr-som.dtsi"
+ #include "imx8mp-hummingboard-iiot.dtsi"
+ 
+ / {
+         model = "SolidRun i.MX8MP HummingBoard IIOT Main Board";
+-        compatible = "fsl,imx8mp-sr-som", "fsl,imx8mp"; 
++        compatible = "fsl,imx8mp-sr-som", "fsl,imx8mp";
+ };
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
+index e3c449c4a57a..acfb61fbcec7 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
+@@ -9,17 +9,6 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include "imx8mp-sr-som.dtsi"
+ 
+-/* UARTA (UART3): Select RS232 or RS485 */
+-#define UARTA_SEL_RS232_RS485 1 // {0:RS323,1:RS485}
+-/* UARTB (UART4): Select RS232 or RS485 */
+-#define UARTB_SEL_RS232_RS485 1 // {0:RS323,1:RS485}
+-/* UARTA and UARTB: Select Internal or External */
+-#define UARTA_UARTB_SEL_INT_EXT 0 // {0:INT,1:EXT}
+-/* CANA and CANB: Select Internal or External */
+-#define CANA_CANB_SEL_INT_EXT 0 // {0:INT,1:EXT}
+-/* SPI MUX TPM/EXT {Select TPM or EXTERNAL_SPI_DEVICE} */
+-#define SPI_SEL_TPM_EXT 0 // {0:TPM,1:EXT}
+-
+ / {
+ 	/* USB1_VBUS */
+ 	power-usb-port1 {
+@@ -58,7 +47,7 @@ reg_usb1_vbus: regulator-usb1-vbus {
+ 		pinctrl-names = "default";
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+-		gpio = <&io_expander_u20 14 GPIO_ACTIVE_HIGH>; /* TBD - USB1_PWR_EN */
++		gpio = <&io_expander_u20 14 GPIO_ACTIVE_HIGH>; /* USB1_PWR_EN */
+ 		enable-active-high;
+ 	};
+ 
+@@ -69,7 +58,7 @@ reg_usb_host3_vbus: regulator-usb1-vbus {
+ 		pinctrl-names = "default";
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+-		gpio = <&io_expander_u20 12 GPIO_ACTIVE_HIGH>; /* TBD - USB1_PWR_EN */
++		gpio = <&io_expander_u20 12 GPIO_ACTIVE_HIGH>; /* USB_HUB3_PWR_EN */
+ 		enable-active-high;
+ 	};
+ 
+@@ -80,7 +69,7 @@ reg_usb_host4_vbus: regulator-usb1-host-vbus {
+ 		pinctrl-names = "default";
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+-		gpio = <&io_expander_u20 13 GPIO_ACTIVE_HIGH>; /* TBD - USB_HUB3_PWR_EN */
++		gpio = <&io_expander_u20 13 GPIO_ACTIVE_HIGH>; /* USB_HUB4_PWR_EN */
+ 		enable-active-high;
+ 	};
+ 
+@@ -92,7 +81,6 @@ reg_usdhc2_vmmc: regulator-usdhc2 {
+ 		regulator-name = "VSD_3V3";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		//gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+ 		regulator-always-on;
+ 	};
+ 
+@@ -110,11 +98,9 @@ reg_can1_stby: regulator-can1-stby {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "can1-stby";
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_flexcan1_reg>;
++		//pinctrl-0 = <&pinctrl_flexcan1_reg>; /* TBD */
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio5 5 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+ 	};
+ 
+ 	/* CAN-2 Regulator */
+@@ -122,14 +108,12 @@ reg_can2_stby: regulator-can2-stby {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "can2-stby";
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_flexcan2_reg>;
++		//pinctrl-0 = <&pinctrl_flexcan2_reg>; /* TBD */
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+ 	};
+ 
+-	/* 
++	/*
+ 		* J4: M.2 Support PCIe only (M.2 KEY-M)
+ 		* J6: M.2 Support USB3.0/USB2.0 (M.2 KEY-B)
+ 		*
+@@ -139,7 +123,7 @@ reg_can2_stby: regulator-can2-stby {
+ 	reg_m2_pcie_j4_pwr: regulator-m2-pcie-j4-pwr {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "m2-j4-pcie-pwr";
+-		pinctrl-names = "default";		
++		pinctrl-names = "default";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+ 		gpio = <&io_expander_u20 6 GPIO_ACTIVE_HIGH>; // U20[P6]
+@@ -165,6 +149,8 @@ reg_m2_j6_pwr: regulator-m2-j6-pwr {
+ 		regulator-max-microvolt = <3300000>;
+ 		gpio = <&io_expander_u20 5 GPIO_ACTIVE_HIGH>; // U20[P5]
+ 		enable-active-high;
++		regulator-allow-bypass;
++		regulator-allow-user-space-control;
+ 	};
+ 
+ 	/* Enable this node for M.2 LTE modem rfkill support (M.2 J6) */
+@@ -220,7 +206,7 @@ carrier_uarta_mux: uarta-mux-controller_carrier {
+ 		#if UARTA_SEL_RS232_RS485
+ 			idle-state = <1>; /* RS485 */
+ 		#else
+-        	idle-state = <0>; /* RS232 */
++		idle-state = <0>; /* RS232 */
+ 		#endif
+     };
+ 
+@@ -244,7 +230,7 @@ carrier_int_ext_uart_mux: int-ext-uart-mux-controller_carrier {
+ 		#if UARTA_UARTB_SEL_INT_EXT
+ 			idle-state = <1>; /* External */
+ 		#else
+-        	idle-state = <0>; /* Internal */
++		idle-state = <0>; /* Internal */
+ 		#endif
+     };
+ 
+@@ -256,7 +242,7 @@ carrier_int_ext_can_mux: int-ext-can-mux-controller_carrier {
+ 		#if CANA_CANB_SEL_INT_EXT
+ 			idle-state = <1>; /* External */
+ 		#else
+-        	idle-state = <0>; /* Internal */
++		idle-state = <0>; /* Internal */
+ 		#endif
+     };
+ 
+@@ -264,11 +250,11 @@ carrier_int_ext_can_mux: int-ext-can-mux-controller_carrier {
+     carrier_spi_mux: spi-mux-controller_carrier {
+         compatible = "gpio-mux"; // MUX Type: 'TMUX1574Dx'
+         #mux-control-cells = <0>;
+-        mux-gpios = <&io_expander_u21 3 GPIO_ACTIVE_HIGH>; // SPI_TPM/EXT U21_P[0]
++        mux-gpios = <&io_expander_u21 0 GPIO_ACTIVE_HIGH>; // SPI_TPM/EXT U21_P[0]
+ 		#if SPI_SEL_TPM_EXT
+ 			idle-state = <1>; /* External */
+ 		#else
+-        	idle-state = <0>; /* Internal */
++		idle-state = <0>; /* Internal */
+ 		#endif
+     };
+ 
+@@ -278,13 +264,13 @@ lcd_i2c_rst: lcd-i2c-rst {
+         regulator-name = "lcd_i2c_rst";
+         regulator-min-microvolt = <1800000>;
+         regulator-max-microvolt = <1800000>;
+-        gpios = <&io_expander_u21 4 GPIO_ACTIVE_HIGH>; // 
++        gpios = <&io_expander_u21 4 GPIO_ACTIVE_HIGH>;
+         enable-active-high;
+     };
+ 
+     /* LVDS [J24] */
+ 	/* Setting for Winstar Display 'WF70A8SYJHLNGA' */
+-    	lvds0_panel {
++	lvds0_panel {
+ 		compatible = "panel-lvds";
+ 		status = "okay";
+ 		width-mm = <154>;
+@@ -313,40 +299,11 @@ panel_lvds_in: endpoint {
+ 		};
+ 	};
+ 
+-	dsi_reset: dsi-reset {
+-		compatible = "gpio-reset"; // "regulator-fixed"; 
+-		reset-gpios = <&gpio_dsi_expander 1 GPIO_ACTIVE_LOW>;
+-		reset-delay-us = <2000>;
+-		reset-post-delay-ms = <40>;
+-		#reset-cells = <0>;
+-	};
+-
+-	vdd_panel: vdd-panel {
+-			compatible = "regulator-fixed";
+-			regulator-name = "vdd_panel";
+-			regulator-min-microvolt = <3300000>;
+-			regulator-max-microvolt = <3300000>;
+-		#if 0 // <TBD>
+-			gpios = <&io_expander_u20 15 GPIO_ACTIVE_HIGH>;
+-			enable-active-high;
+-		#endif
+-	};
+-
+-#if 1
+-	/* DSI Panel - Winstar WJ70N3TYJHMNG0 [J25] */
+-	panel_dsi: panel-dsi {
+-		status = "okay";
+-		compatible = "winstar,wj70n3tyjhmng0"; // "panel-simple-dsi"
+-		//reg = <0>;
+-		power-supply = <&vdd_panel>;		
+-        dsi-lanes = <4>;
+- 		port {
+-			panel0_in: endpoint {
+-					remote-endpoint = <&mipi0_panel_out>;
+-			};
+-		};
++	mipi_backlight: backlight {
++		compatible = "gpio-backlight";
++		gpios = <&gpio_dsi_expander 3 GPIO_ACTIVE_LOW>;
++		default-on;
+ 	};
+-#endif
+ };
+ 
+ &ldb {
+@@ -371,7 +328,7 @@ &ldb_phy {
+ };
+ 
+ &i2c2 {
+- 	clock-frequency = <100000>;
++	clock-frequency = <400000>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+@@ -396,7 +353,7 @@ i2c_ext: i2c@0 {
+ 			#size-cells = <0>;
+ 			reg = <0>;
+ 		};
+-		
++
+ 		/* channel1: CSI I2C */
+         i2c_csi: i2c@1 {
+ 			#address-cells = <1>;
+@@ -424,7 +381,7 @@ basler_ep_0: endpoint {
+ 				};
+ 			};
+ 		};
+-		
++
+ 		/* channel2: DSI I2C */
+         i2c_dsi: i2c@2 {
+ 			#address-cells = <1>;
+@@ -433,15 +390,15 @@ i2c_dsi: i2c@2 {
+ 
+ 			/* DSI Touch Screen [J25] */
+ 			touchscreen@41 {
+-				/* ili2520 part of the Winstart Display WJ70N3TYJHMNG0 */
+-				compatible = "ilitek,ili2520";
++				/* ili2130 part of the Winstart Display WJ70N3TYJHMNG0 */
++				compatible = "ilitek,ili2130";
+ 				reg = <0x41>;
+ 
+ 				interrupt-parent = <&io_expander_u21>;
+-				interrupts = <13 IRQ_TYPE_LEVEL_LOW>;	// <TBD> U21_P[15]=LVDS_INT (shared INT for DSI and LVDS)
++				interrupts = <13 IRQ_TYPE_EDGE_FALLING>;	// U21_P[15]=LVDS_INT (shared INT for DSI and LVDS)
+ 				reset-gpios = <&gpio_dsi_expander 6 GPIO_ACTIVE_LOW>; // DSI_CTP/RST U48_P[6] (External Reset, Low is active)
+ 				//touchscreen-inverted-y;
+-				//wakeup-source;
++				wakeup-source;
+ 			};
+ 		};
+ 
+@@ -450,7 +407,7 @@ i2c_lvds: i2c@3 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <3>;
+-		
++
+ 			/* io_expander_u37 */
+ 			gpio_lvds_expander: tca6408@20 {
+ 				compatible = "ti,tca6408";
+@@ -458,7 +415,7 @@ gpio_lvds_expander: tca6408@20 {
+ 				gpio-controller;
+ 				#gpio-cells = <2>;
+ 				vcc-supply = <&lcd_i2c_rst>;
+-				gpio-line-names = 
++				gpio-line-names =
+ 				"SELB",
+ 				"LVDS_RESET",
+ 				"LVDS_STBYB",
+@@ -513,7 +470,7 @@ LVDS_CTP_RST_hog {
+ 					output-high;
+ 					line-name = "LVDS_CTP_/RST";
+ 				};
+-				*/															
++				*/
+ 			};
+ 
+ 			/* io_expander_u48 */
+@@ -523,7 +480,7 @@ gpio_dsi_expander: tca6408@21 {
+ 				gpio-controller;
+ 				#gpio-cells = <2>;
+ 				vcc-supply = <&lcd_i2c_rst>;
+-				gpio-line-names = 
++				gpio-line-names =
+ 				"NC-0",
+ 				"DSI_RESET",
+ 				"DSI_STBYB",
+@@ -532,28 +489,7 @@ gpio_dsi_expander: tca6408@21 {
+ 				"DSI_U/D",
+ 				"DSI_CTP_/RST",
+ 				"NC-7";
+-			#if 1 // <TBD>
+-				DSI_RESET_hog {
+-					gpio-hog;
+-					gpios = <1 GPIO_ACTIVE_HIGH>;
+-					output-high;
+-					line-name = "DSI_RESET";
+-				};
+ 
+-				DSI_STBYB_hog {
+-					gpio-hog;
+-					gpios = <2 GPIO_ACTIVE_HIGH>;
+-					output-high;
+-					line-name = "DSI_STBYB";
+-				};
+-			#endif
+-				/* Display Backlight control signal*/
+-				DSI_PWM_BL_hog {
+-					gpio-hog;
+-					gpios = <3 GPIO_ACTIVE_LOW>;
+-					output-high;
+-					line-name = "DSI_PWM_BL";
+-				};
+ 				DSI_LR_hog {
+ 					gpio-hog;
+ 					gpios = <4 GPIO_ACTIVE_HIGH>;
+@@ -566,7 +502,7 @@ DSI_UD_hog {
+ 					output-high;
+ 					line-name = "DSI_U/D";
+ 				};
+-				/*
++				/* // <TBD>
+ 				DSI_CTP_RST_hog {
+ 					gpio-hog;
+ 					gpios = <6 GPIO_ACTIVE_HIGH>;
+@@ -587,6 +523,7 @@ touchscreen@41 {
+ 				reset-gpios = <&gpio_lvds_expander 6 GPIO_ACTIVE_LOW>; // LVDS_CTP/RST U37_P[6] (External Reset, Low is active)
+ 				//touchscreen-inverted-y;
+ 				//wakeup-source;
++				status = "okay";
+ 			};
+ 		};
+ 	};
+@@ -600,7 +537,7 @@ &i2c3 {
+ 
+     /* io_expander_u20 */
+     io_expander_u20: gpio@20 {
+-        compatible = "ti,tca6416";
++        compatible = "nxp,pcal6416";
+         reg = <0x20>;
+         gpio-controller;
+         #gpio-cells = <2>;
+@@ -629,26 +566,27 @@ NXP_REN_hog {
+ 			line-name = "NXP_REN";
+ 		};
+ 
+-	#if 1
+ 		VIDEO_PWR_EN_hog {
+ 			gpio-hog;
+ 			gpios = <15 GPIO_ACTIVE_HIGH>;
+ 			output-high;
+ 			line-name = "VIDEO_PWR_EN";
+ 		};
+-	#endif
++
+     };
+ 
+     /* io_expander_u21 */
+     io_expander_u21: gpio@21 {
+-        compatible = "ti,tca6416";
++        compatible = "nxp,pcal6416";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_tca6416_21>;
+         reg = <0x21>;
+         gpio-controller;
+         #gpio-cells = <2>;
+ 		interrupt-controller;
+ 		#interrupt-cells = <2>;
+-        interrupt-parent = <&gpio1>; //GPIO1_IO15
+-        interrupts = <15 IRQ_TYPE_EDGE_FALLING>;//IRQ_TYPE_LEVEL_LOW, IRQ_TYPE_EDGE_FALLING, xxIRQ_TYPE_EDGE_RISING, 
++        interrupt-parent = <&gpio1>; /* GPIO1_IO15 */
++        interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+         gpio-line-names =
+         "TCA_SPI_TPM/EXT",
+         "TCA_TPM_RST#",
+@@ -780,7 +718,7 @@ carrier_tpm: tpm@0 {
+ 		    reg = <0>;
+ 		    spi-max-frequency = <10000000>;
+ 		};
+-		
++
+ 		carrier_conn: carrier_conn_spi@1 {
+ 		    status = "okay";
+ 		    compatible = "linux,spidev";
+@@ -887,29 +825,34 @@ &mipi_csi_1 {
+ 	status = "okay";
+ };
+ 
+-&mipi_dsi {	
+-	status = "disabled";
+-	#if 0 // <TBD>
++&mipi_dsi {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
+ 	panel@0 {
+ 		/* Winstart Display WJ70N3TYJHMNG0 [J25] */
+-		status = "okay";
+-		compatible = "winstar,wj70n3tyjhmng0";
++		compatible = "ronbo,rb070d30";
+ 		reg = <0>;
+-		power-supply = <&vdd_panel>;		
++		power-gpios = <&gpio_dsi_expander 2 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&gpio_dsi_expander 1 GPIO_ACTIVE_HIGH>;
++		updn-gpios = <&gpio_dsi_expander 5 GPIO_ACTIVE_HIGH>;
++		shlr-gpios = <&gpio_dsi_expander 4 GPIO_ACTIVE_LOW>;
++
+ 		dsi-lanes = <4>;
++		status = "okay";
++
+ 		port {
+-			panel0_in: endpoint {
+-					remote-endpoint = <&mipi0_panel_out>;
++			panel_in: endpoint {
++				data-lanes = <1 2 3 4>;
++				remote-endpoint = <&mipi_dsi_out>;
+ 			};
+ 		};
+ 	};
+-	#endif
+ 
+ 	port@1 {
+ 		reg = <1>;
+-		mipi0_panel_out: endpoint {
+-			remote-endpoint = <&panel0_in>;
+-			//attach-bridge;
++		mipi_dsi_out: endpoint {
++			remote-endpoint = <&panel_in>;
+ 		};
+ 	};
+ };
+@@ -954,7 +897,7 @@ &sdma2 {
+ /* UARTA: RS485-A / RS232-A */
+ &uart3 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_uart3>;	
++	pinctrl-0 = <&pinctrl_uart3>;
+ 	assigned-clocks = <&clk IMX8MP_CLK_UART3>;
+ 	assigned-clock-parents = <&clk IMX8MP_SYS_PLL1_80M>;
+ 	status = "okay";
+@@ -975,7 +918,7 @@ &uart4 {
+ 	assigned-clock-parents = <&clk IMX8MP_SYS_PLL1_80M>; // <&clk IMX8MP_CLK_24M>;
+ 	status = "okay";
+ 
+-#if UARTB_SEL_RS232_RS485	
++#if UARTB_SEL_RS232_RS485
+ 	/*RS485-B (UARTB_TX/UARTB_RX)*/
+ 	rts-gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
+ 	linux,rs485-enabled-at-boot-time;
+@@ -1034,10 +977,10 @@ &usdhc2 {
+ 	status = "okay";
+ };
+ 
+-/* 
++/*
+ CAN MUX:
+ 	EXT_CAN = 0
+-	NXP/REN = 1 
++	NXP/REN = 1
+ */
+ &flexcan1 {
+ 	pinctrl-names = "default";
+@@ -1078,8 +1021,8 @@ pinctrl_hog: hoggrp {
+ 
+ 	pinctrl_i2c2: i2c2grp {
+ 		fsl,pins = <
+-			MX8MP_IOMUXC_I2C2_SCL__I2C2_SCL			0x400001c3
+-			MX8MP_IOMUXC_I2C2_SDA__I2C2_SDA			0x400001c3
++			MX8MP_IOMUXC_I2C2_SCL__I2C2_SCL			0x400001c2
++			MX8MP_IOMUXC_I2C2_SDA__I2C2_SDA			0x400001c2
+ 		>;
+ 	};
+ 
+@@ -1186,16 +1129,9 @@ MX8MP_IOMUXC_SAI5_RXD3__CAN2_TX         0x154
+ 		>;
+ 	};
+ 
+-	pinctrl_flexcan1_reg: flexcan1reggrp {
++	pinctrl_tca6416_21: tca6416_21_irq {
+ 		fsl,pins = <
+-			MX8MP_IOMUXC_SPDIF_EXT_CLK__GPIO5_IO05  0x154   /* CAN1_STBY */
++			MX8MP_IOMUXC_GPIO1_IO15__GPIO1_IO15     0x19
+ 		>;
+ 	};
+-
+-	pinctrl_flexcan2_reg: flexcan2reggrp {
+-		fsl,pins = <
+-			MX8MP_IOMUXC_SAI2_MCLK__GPIO4_IO27      0x154   /* CAN2_STBY */
+-		>;
+-	};
+-
+-};
+\ No newline at end of file
++};
+-- 
+2.25.1
+

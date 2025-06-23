@@ -1,0 +1,113 @@
+From 707eada1ddc0cbc10ca4c546af7b01e3d7bd7f74 Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Mon, 23 Jun 2025 19:59:20 +0300
+Subject: [PATCH] arm64: dts: imx8mp-hummingboard-iiot-stnc: disable unused
+ nodes
+
+- Remove unused MIA-M10Q GPS reset node.
+- Standardize node labels and naming style for M.2B J6 regulators and rfkill nodes.
+- Disable M.2B J6 LTE modem related nodes (power, rfkill, reset, MIPI DSI) in the STNC DTS.
+- Minor fixes to node labels for consistency.
+---
+ .../imx8mp-hummingboard-iiot-stnc.dts         | 37 +++++++++++++------
+ .../freescale/imx8mp-hummingboard-iiot.dtsi   | 10 ++---
+ 2 files changed, 31 insertions(+), 16 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-stnc.dts b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-stnc.dts
+index 648aebf62dc2..6c26ab325416 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-stnc.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot-stnc.dts
+@@ -19,16 +19,6 @@ / {
+     model = "SolidRun i.MX8MP HummingBoard IIOT STNC-800-BI";
+     compatible = "fsl,imx8mp-sr-som", "fsl,imx8mp";
+ 
+-    /* MIA-M10Q RSTN */
+-    gpns_reset: gps-reset {
+-            compatible = "gpio-reset";
+-            reset-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>; // GPIO1_IO00
+-            reset-delay-us = <100000>;  // 100 ms low pulse
+-            reset-post-delay-ms = <50>; // Optional: wait 50ms after release
+-            #reset-cells = <0>;
+-            status = "okay";
+-    };
+-
+     #if 0
+         /*
+         RelayO_1       - GPIO1_IO13
+@@ -134,4 +124,29 @@ pinctrl_flexcan2_reg: flexcan2reggrp {
+ 			MX8MP_IOMUXC_HDMI_DDC_SDA__GPIO3_IO27 0x154   /* CAN2_STBY */
+ 		>;
+ 	};
+-};
+\ No newline at end of file
++};
++
++/* Disable M.2B J6 LTE Modem Signlas */
++&rfkill_m2_wdis {
++    status = "disabled";
++};
++
++&rfkill_m2_gps {
++    status = "disabled";
++};
++
++&reg_m2_j6_pwr {
++    status = "disabled";
++};
++
++&power_m2_j6 {
++    status = "disabled";
++};
++
++&lte_reset {
++    status = "disabled";
++};
++
++&mipi_dsi {
++    status = "disabled";
++};
+diff --git a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
+index acfb61fbcec7..60376fb1d06f 100644
+--- a/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-hummingboard-iiot.dtsi
+@@ -131,7 +131,7 @@ reg_m2_pcie_j4_pwr: regulator-m2-pcie-j4-pwr {
+ 	};
+ 
+ 	/* J6: M.2B_3V3 */
+-	power-m2-j6 {
++	power_m2_j6: power-m2-j6 {
+ 		compatible = "reg-userspace-consumer";
+ 		regulator-name = "m2-j6-pwr-consumer";
+ 		regulator-boot-on;
+@@ -154,7 +154,7 @@ reg_m2_j6_pwr: regulator-m2-j6-pwr {
+ 	};
+ 
+ 	/* Enable this node for M.2 LTE modem rfkill support (M.2 J6) */
+-	rfkill_m2_wdis {
++	rfkill_m2_wdis: rfkill-m2-wdis {
+ 		compatible = "rfkill-gpio";
+ 		pinctrl-names = "default";
+ 		rfkill-name = "m2_wdis";
+@@ -164,7 +164,7 @@ rfkill_m2_wdis {
+ 	};
+ 
+ 	/* GPIO Controll M.2-J6 rfkill */
+-	rfkill_m2_gps {
++	rfkill_m2_gps: rfkill-m2-gps {
+ 		compatible = "rfkill-gpio";
+ 		pinctrl-names = "default";
+ 		rfkill-name = "m2_gps";
+@@ -189,8 +189,8 @@ gpio-m2m-clkreq-hog {
+ 		line-name = "M.2M_CLKREQ-J4";
+ 	};
+ 
+-	/* M.2B-J4 Reset */
+-	lte-reset {
++	/* M.2B-J6 Reset */
++	lte_reset: lte-reset {
+ 		compatible = "gpio-reset";
+ 		reset-gpios = <&io_expander_u20 8 GPIO_ACTIVE_LOW>; // M.2B_RESET U20_P[10]
+ 		reset-delay-us = <2000>;
+-- 
+2.25.1
+
