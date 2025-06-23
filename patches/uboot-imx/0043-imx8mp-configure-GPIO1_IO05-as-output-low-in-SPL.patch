@@ -1,0 +1,42 @@
+From 2cee7829227acf54e9330184c69808e54f42f36c Mon Sep 17 00:00:00 2001
+From: Yazan Shhady <yazan.shhady@solid-run.com>
+Date: Thu, 5 Jun 2025 18:50:35 +0300
+Subject: [PATCH] imx8mp: configure GPIO1_IO05 as output low in SPL
+
+---
+ board/solidrun/imx8mp_solidrun/spl.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/board/solidrun/imx8mp_solidrun/spl.c b/board/solidrun/imx8mp_solidrun/spl.c
+index 1adabec03..eb9036172 100644
+--- a/board/solidrun/imx8mp_solidrun/spl.c
++++ b/board/solidrun/imx8mp_solidrun/spl.c
+@@ -34,6 +34,9 @@
+ #include "lpddr4_timing.h"
+ 
+ #define ONE_GB 0x40000000ULL
++
++#define GPIO1_IO05_PAD MX8MP_PAD_GPIO1_IO05__GPIO1_IO05
++
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int spl_board_boot_device(enum boot_device boot_dev_spl)
+@@ -463,6 +466,15 @@ void spl_board_init(void)
+ 	clock_enable(CCGR_GIC, 1);
+ #endif
+ 
++	/* Setup the pad */
++	imx_iomux_v3_setup_pad(GPIO1_IO05_PAD);
++
++	/* Request the GPIO */
++	gpio_request(IMX_GPIO_NR(1, 5), "gpio1_5");
++
++	/* Set as output, initial value low */
++	gpio_direction_output(IMX_GPIO_NR(1, 5), 0);
++
+ 	puts("Normal Boot\n");
+ }
+ 
+-- 
+2.25.1
+
