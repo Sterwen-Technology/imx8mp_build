@@ -462,7 +462,8 @@ MENU TITLE SolidRun i.MX8MP Reference BSP
 LABEL default
 	MENU LABEL default
 	LINUX ../Image
-	FDTDIR ../
+	FDT /freescale/imx8mp-hummingboard-iiot-stnc.dtb
+	#FDTDIR ../
 	APPEND console=\${console} earlycon=ec_imx6q,0x30890000,115200 root=PARTUUID=$PARTUUID rw rootwait \${bootargs}
 EOF
 }
